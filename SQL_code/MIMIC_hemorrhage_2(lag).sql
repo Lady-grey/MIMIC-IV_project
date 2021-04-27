@@ -1,15 +1,15 @@
 
-/*****hemorrhage È®ÀÎ*******/
+/*****hemorrhage í™•ì¸*******/
 
---intime, intimeÀ¸·Î ºÎÅÍ 12½Ã°£ Â÷ÀÌ °è»êÇØ¼­ ÄÃ·³ Ãß°¡
+--intime, intimeìœ¼ë¡œ ë¶€í„° 12ì‹œê°„ ì°¨ì´ ê³„ì‚°í•´ì„œ ì»¬ëŸ¼ ì¶”ê°€
 select *, DATEADD(hh,12,intime) as intime_12h into #bleeding_PRBC from PRBC_icu_join_RN
 
---starttimeÀÌ ÁßÈ¯ÀÚ½Ç ÀÔ½Ç 12½Ã°£ ÀÌÈÄ¿¡ ÀÖ´Â °æ¿ì
+--starttimeì´ ì¤‘í™˜ìì‹¤ ì…ì‹¤ 12ì‹œê°„ ì´í›„ì— ìˆëŠ” ê²½ìš°
 select * from #bleeding_PRBC
 where intime_12h <= starttime 
 order by subject_id, stay_id, starttime
 
---stay_idº° ¼öÇ÷ ½ÃÀÛ½Ã°£À¸·Î Á¤·Ä, ÀÌÀü ¼öÇ÷ ½ÃÀÛ ½Ã°£(lag)°ú ½Ã°£ Â÷ÀÌ °è»ê
+--stay_idë³„ ìˆ˜í˜ˆ ì‹œì‘ì‹œê°„ìœ¼ë¡œ ì •ë ¬, ì´ì „ ìˆ˜í˜ˆ ì‹œì‘ ì‹œê°„(lag)ê³¼ ì‹œê°„ ì°¨ì´ ê³„ì‚°
 select *, LAG(starttime, 1, NULL) over (partition by stay_id order by starttime) as pre_starttime into #lag_PRBC 
 from (select * from #bleeding_PRBC
 where intime_12h <= starttime) v
@@ -23,7 +23,7 @@ where pre_diff <= 24
 or pre_diff is null
 order by subject_id, stay_id, starttime
 
---±× Áß¿¡¼­ ¼öÇ÷·®ÀÌ PRBC 3unit(350*3) ÀÌ»óÀÎ °æ¿ì¸¸ stay_id ¸®½ºÆ®¾÷(2203)
+--ê·¸ ì¤‘ì—ì„œ ìˆ˜í˜ˆëŸ‰ì´ PRBC 3unit(350*3) ì´ìƒì¸ ê²½ìš°ë§Œ stay_id ë¦¬ìŠ¤íŠ¸ì—…(2203)
 select stay_id into #hemorrhage_id from #lag_temp_2
 group by stay_id
 having sum(amount)>=1050
@@ -34,9 +34,9 @@ on A.stay_id = B.stay_id
 select * from #hemo_temp
 order by subject_id, stay_id, starttime
 
---ÀÔ½Ç 12½Ã°£ ÀÌÈÄ¿¡ Ã¹ ¼öÇ÷ÀÌ ½ÃÀÛµÈ °æ¿ì(PRBC_RN=1) ÀÖ´Â °æ¿ì¸¸ 
+--ì…ì‹¤ 12ì‹œê°„ ì´í›„ì— ì²« ìˆ˜í˜ˆì´ ì‹œì‘ëœ ê²½ìš°(PRBC_RN=1) ìˆëŠ” ê²½ìš°ë§Œ 
 
---14980°Ç
+--14980ê±´
 select *, row_number() over (partition by stay_id order by starttime) as hemo_RN into #hemo_temp_2 from #hemo_temp
 
 --1188
@@ -47,7 +47,7 @@ select * into #hemo_temp_3 from #hemo_temp_2
 where PRBC_RN = hemo_RN
 order by subject_id, stay_id, starttime
 
---±× Áß¿¡¼­ ¼öÇ÷·®ÀÌ PRBC 3unit(350*3) ÀÌ»óÀÎ °æ¿ì¸¸ stay_id Àç ¸®½ºÆ®¾÷(2203)
+--ê·¸ ì¤‘ì—ì„œ ìˆ˜í˜ˆëŸ‰ì´ PRBC 3unit(350*3) ì´ìƒì¸ ê²½ìš°ë§Œ stay_id ì¬ ë¦¬ìŠ¤íŠ¸ì—…(2203)
 select stay_id into #hemo_temp_id from #hemo_temp_3
 group by stay_id
 having sum(amount)>=1050
@@ -56,13 +56,13 @@ select B.* into #hemo_temp_4 from  #hemo_temp_id A left join #hemo_temp_3 B
 on A.stay_id = B.stay_id
 
 
---771°Ç stay_id
+--771ê±´ stay_id
 select distinct stay_id from #hemo_temp_4
 
 select subject_id, stay_id, intime, outtime, intime_12h, starttime, endtime, amount, pre_starttime, pre_diff, PRBC_RN, hemo_RN, los from #hemo_temp_4
 order by subject_id, stay_id, starttime
 
 
---hemorrhage table·Î 
+--hemorrhage tableë¡œ 
 select * into hemorrhage from #hemo_temp_4
 order by subject_id, stay_id, starttime
